@@ -1,5 +1,6 @@
-package com.github.xioshe.routing;
+package com.github.xioshe.routing.routers;
 
+import com.github.xioshe.routing.ClusterAwareRouter;
 import com.github.xioshe.routing.hasing.HashFunction;
 import com.github.xioshe.routing.hasing.MurmurHash3Function;
 import com.github.xioshe.routing.node.Node;

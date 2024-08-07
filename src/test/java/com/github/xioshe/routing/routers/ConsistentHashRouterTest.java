@@ -1,5 +1,6 @@
-package com.github.xioshe.routing;
+package com.github.xioshe.routing.routers;
 
+import com.github.xioshe.routing.RoutingBaseTest;
 import com.github.xioshe.routing.node.IpNode;
 import org.junit.jupiter.api.Test;
 
