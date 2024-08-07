@@ -1,5 +1,7 @@
 package com.github.xioshe.routing;
 
+import com.github.xioshe.routing.node.Node;
+
 /**
  * 感知集群节点变化的路由接口
  *
