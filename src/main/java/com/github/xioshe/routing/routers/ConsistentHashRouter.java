@@ -94,9 +94,6 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
         }
         int hash = hashfunction.hash(key);
         VirtualNode<T> nextVirtualNode = nextVirtualNode(hash);
-        if (nextVirtualNode == null) {
-            nextVirtualNode = hashRing.firstEntry().getValue();
-        }
         return (T) nextVirtualNode.physicalNode();
     }
 
