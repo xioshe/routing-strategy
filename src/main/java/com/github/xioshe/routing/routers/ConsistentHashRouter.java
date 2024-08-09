@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 一致性 hash 路由实现
@@ -32,6 +33,11 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
      */
     private final int virtualNodeCount;
 
+    /**
+     * 读写锁，保证 hashRing 的线程安全
+     */
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
+
     public ConsistentHashRouter(int virtualNodeCount) {
         this(new MurmurHash3Function(), virtualNodeCount);
     }
@@ -43,67 +49,97 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
 
     @Override
     public void setNodes(T[] nodes) {
-        hashRing.clear();
-        virtualNodeCache.clear();
-        for (T node : nodes) {
-            addNode(node);
+        lock.writeLock().lock();
+        try {
+            hashRing.clear();
+            virtualNodeCache.clear();
+            for (T node : nodes) {
+                addNode(node);
+            }
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public List<T> addNode(T node) {
-        boolean isFirstNode = hashRing.isEmpty();
-        Set<T> affectedNodes = new HashSet<>();
-        for (int i = 0; i < virtualNodeCount; i++) {
-            VirtualNode<T> virtualNode = new VirtualNode<>(node, node.key() + "#" + i);
-            int hash = hashfunction.hash((virtualNode.key()));
-            hashRing.put(hash, virtualNode);
+        lock.writeLock().lock();
+        try {
+            boolean isFirstNode = hashRing.isEmpty();
+            Set<T> affectedNodes = new HashSet<>();
+            for (int i = 0; i < virtualNodeCount; i++) {
+                VirtualNode<T> virtualNode = new VirtualNode<>(node, node.key() + "#" + i);
+                int hash = hashfunction.hash((virtualNode.key()));
+                hashRing.put(hash, virtualNode);
 
-            virtualNodeCache.putIfAbsent(node, new ArrayList<>());
-            virtualNodeCache.get(node).add(virtualNode);
+                virtualNodeCache.putIfAbsent(node, new ArrayList<>());
+                virtualNodeCache.get(node).add(virtualNode);
 
-            if (!isFirstNode) {
-                // 收集被影响的真实节点
-                affectedNodes.add((T) previousVirtualNode(hash).physicalNode());
+                if (!isFirstNode) {
+                    // 收集被影响的真实节点
+                    affectedNodes.add((T) previousVirtualNode(hash).physicalNode());
+                }
             }
+            return affectedNodes.stream().toList();
+        } finally {
+            lock.writeLock().unlock();
         }
-        return affectedNodes.stream().toList();
     }
 
     @Override
     public List<T> removeNode(T node) {
-        List<VirtualNode<T>> virtualNodes = virtualNodeCache.get(node);
-        if (virtualNodes == null) {
-            return Collections.emptyList();
+        lock.writeLock().lock();
+        try {
+            List<VirtualNode<T>> virtualNodes = virtualNodeCache.get(node);
+            if (virtualNodes == null) {
+                return Collections.emptyList();
+            }
+            for (VirtualNode<T> virtualNode : virtualNodes) {
+                int hash = hashfunction.hash((virtualNode.key()));
+                hashRing.remove(hash);
+            }
+            virtualNodeCache.remove(node);
+            return Collections.singletonList(node);
+        } finally {
+            lock.writeLock().unlock();
         }
-        for (VirtualNode<T> virtualNode : virtualNodes) {
-            int hash = hashfunction.hash((virtualNode.key()));
-            hashRing.remove(hash);
-        }
-        virtualNodeCache.remove(node);
-        return Collections.singletonList(node);
     }
 
     @Override
     @Nullable
     @SuppressWarnings("unchecked")
     public T route(String key) {
-        if (hashRing.isEmpty()) {
-            return null;
+        lock.readLock().lock();
+        try {
+            if (hashRing.isEmpty()) {
+                return null;
+            }
+            int hash = hashfunction.hash(key);
+            VirtualNode<T> nextVirtualNode = nextVirtualNode(hash);
+            return (T) nextVirtualNode.physicalNode();
+        } finally {
+            lock.readLock().unlock();
         }
-        int hash = hashfunction.hash(key);
-        VirtualNode<T> nextVirtualNode = nextVirtualNode(hash);
-        return (T) nextVirtualNode.physicalNode();
     }
 
     @Override
     public int size() {
-        return virtualNodeCache.size();
+        lock.readLock().lock();
+        try {
+            return virtualNodeCache.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public int virtualNodeSize() {
-        return hashRing.size();
+        lock.readLock().lock();
+        try {
+            return hashRing.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     private VirtualNode<T> previousVirtualNode(int hash) {
