@@ -1,6 +1,7 @@
 # Routing Strategy Implementation
 
-include such strategies as:
+Including such strategies as:
 
 - Consistent Hashing Router
+- Rendezvous Hashing Router
 - Round Robin Router
