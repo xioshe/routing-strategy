@@ -14,4 +14,12 @@ public class XxHashFunction implements HashFunction {
         // 保证返回值为正数
         return (int) (xxHash32.getValue() & 0x7fffffff);
     }
+
+    @Override
+    public int hash(String seed, String key) {
+        XXHash32 xxHash32 = new XXHash32();
+        xxHash32.update(seed.getBytes());
+        xxHash32.update(key.getBytes());
+        return (int) (xxHash32.getValue() & 0x7fffffff);
+    }
 }

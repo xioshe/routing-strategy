@@ -1,6 +1,8 @@
 package com.github.xioshe.routing.hasing;
 
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * 128 bit MurmurHash3 hash function.
  */
@@ -11,6 +13,14 @@ public class MurmurHash3Function implements HashFunction {
     @Override
     public int hash(String key) {
         // 保证返回值为正数
-        return murMurHash3.hashString(key, java.nio.charset.StandardCharsets.UTF_8).asInt() & 0x7fffffff;
+        return murMurHash3.hashString(key, StandardCharsets.UTF_8).asInt() & 0x7fffffff;
+    }
+
+    @Override
+    public int hash(String seed, String key) {
+        return murMurHash3.newHasher()
+                .putString(seed, StandardCharsets.UTF_8)
+                .putString(key, StandardCharsets.UTF_8)
+                .hash().asInt();
     }
 }

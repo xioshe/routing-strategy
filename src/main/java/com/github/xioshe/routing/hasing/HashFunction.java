@@ -4,7 +4,6 @@ package com.github.xioshe.routing.hasing;
 /**
  * 哈希函数接口
  */
-@FunctionalInterface
 public interface HashFunction {
 
     /**
@@ -14,4 +13,6 @@ public interface HashFunction {
      * @return 哈希值，应该大于等于 0
      */
     int hash(String key);
+
+    int hash(String seed, String key);
 }

@@ -17,4 +17,12 @@ public class Crc32HashFunction implements HashFunction {
         // 保证返回值为正数
         return hash & 0x7fffffff;
     }
+
+    @Override
+    public int hash(String seed, String key) {
+        return crc32c.newHasher()
+                .putString(seed, StandardCharsets.UTF_8)
+                .putString(key, StandardCharsets.UTF_8)
+                .hash().asInt();
+    }
 }
