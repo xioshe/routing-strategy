@@ -12,17 +12,12 @@ public class Crc32HashFunction implements HashFunction {
     private final com.google.common.hash.HashFunction crc32c = com.google.common.hash.Hashing.crc32c();
 
     @Override
-    public int hash(String key) {
-        int hash = crc32c.hashString(key, StandardCharsets.UTF_8).asInt();
-        // 保证返回值为正数
-        return hash & 0x7fffffff;
+    public long hash(String key) {
+        return crc32c.hashString(key, StandardCharsets.UTF_8).padToLong();
     }
 
     @Override
-    public int hash(String seed, String key) {
-        return crc32c.newHasher()
-                .putString(seed, StandardCharsets.UTF_8)
-                .putString(key, StandardCharsets.UTF_8)
-                .hash().asInt();
+    public int bits() {
+        return 32;
     }
 }

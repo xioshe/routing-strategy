@@ -64,9 +64,9 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
         }
 
         T result = null;
-        int maxHash = Integer.MIN_VALUE;
+        long maxHash = Long.MIN_VALUE;
         for (T node : nodeList) {
-            int hash = hashfunction.hash(key, node.key());
+            long hash = hashfunction.hash(key + node.key());
             if (hash > maxHash) {
                 maxHash = hash;
                 result = node;

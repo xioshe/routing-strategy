@@ -24,7 +24,7 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
     /**
      * 用 TreeMap 简化 hashRing 结构，加快查询相邻节点速度
      */
-    private final TreeMap<Integer, VirtualNode<T>> hashRing = new TreeMap<>();
+    private final TreeMap<Long, VirtualNode<T>> hashRing = new TreeMap<>();
     private final Map<T, List<VirtualNode<T>>> virtualNodeCache = new HashMap<>();
     private final HashFunction hashfunction;
 
@@ -68,7 +68,7 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
         Set<T> affectedNodes = new HashSet<>();
         for (int i = 0; i < virtualNodeCount; i++) {
             VirtualNode<T> virtualNode = new VirtualNode<>(node, node.key() + "#" + i);
-            int hash = hashfunction.hash((virtualNode.key()));
+            long hash = hashfunction.hash((virtualNode.key()));
             hashRing.put(hash, virtualNode);
 
             virtualNodeCache.putIfAbsent(node, new ArrayList<>());
@@ -91,7 +91,7 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
                 return Collections.emptyList();
             }
             for (VirtualNode<T> virtualNode : virtualNodes) {
-                int hash = hashfunction.hash((virtualNode.key()));
+                long hash = hashfunction.hash((virtualNode.key()));
                 hashRing.remove(hash);
             }
             virtualNodeCache.remove(node);
@@ -110,7 +110,7 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
             if (hashRing.isEmpty()) {
                 return null;
             }
-            int hash = hashfunction.hash(key);
+            long hash = hashfunction.hash(key);
             VirtualNode<T> nextVirtualNode = nextVirtualNode(hash);
             return (T) nextVirtualNode.physicalNode();
         } finally {
@@ -137,16 +137,16 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
         }
     }
 
-    private VirtualNode<T> previousVirtualNode(int hash) {
-        Map.Entry<Integer, VirtualNode<T>> entry = hashRing.lowerEntry(hash);
+    private VirtualNode<T> previousVirtualNode(long hash) {
+        Map.Entry<Long, VirtualNode<T>> entry = hashRing.lowerEntry(hash);
         if (entry == null) {
             entry = hashRing.lastEntry();
         }
         return entry.getValue();
     }
 
-    private VirtualNode<T> nextVirtualNode(int hash) {
-        Map.Entry<Integer, VirtualNode<T>> entry = hashRing.higherEntry(hash);
+    private VirtualNode<T> nextVirtualNode(long hash) {
+        Map.Entry<Long, VirtualNode<T>> entry = hashRing.higherEntry(hash);
         if (entry == null) {
             entry = hashRing.firstEntry();
         }

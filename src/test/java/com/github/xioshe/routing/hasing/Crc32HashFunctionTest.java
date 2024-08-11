@@ -1,28 +1,29 @@
 package com.github.xioshe.routing.hasing;
 
+import com.github.xioshe.routing.RoutingBaseTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
 
-class Crc32HashFunctionTest {
+
+class Crc32HashFunctionTest extends RoutingBaseTest {
 
     @Test
-    void shouldReturnGreaterThanOrEqualToZero() {
-        Crc32HashFunction crc32 = new Crc32HashFunction();
-        Assertions.assertTrue(crc32.hash("test") >= 0);
+    void Hash_gte_zero() {
+        Crc32HashFunction function = new Crc32HashFunction();
+        Assertions.assertTrue(function.hash("") >= 0);
+        for (int i = 0; i < 10000; i++) {
+            assertThat(function.hash(getRandString(8))).isGreaterThanOrEqualTo(0);
+        }
     }
 
     @Test
-    void Hash_with_different_seed_return_different_hashcode() {
-        // given
-        Crc32HashFunction crc32 = new Crc32HashFunction();
-        String seed1 = "seed_1";
-        String seed2 = "seed_2";
-        String key = "key";
-        // when
-        int hash1 = crc32.hash(seed1, key);
-        int hash2 = crc32.hash(seed2, key);
-        // then
-        Assertions.assertNotEquals(hash1, hash2);
+    void UnitInterval_between_0_and_1() {
+        Crc32HashFunction function = new Crc32HashFunction();
+        for (int i = 0; i < 10000; i++) {
+            double hash = function.unitInterval(getRandString(8));
+            assertThat(hash).isGreaterThan(0).isLessThanOrEqualTo(1.0);
+        }
     }
 }

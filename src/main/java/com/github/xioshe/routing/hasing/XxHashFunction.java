@@ -8,18 +8,14 @@ import org.apache.commons.codec.digest.XXHash32;
 public class XxHashFunction implements HashFunction {
 
     @Override
-    public int hash(String key) {
+    public long hash(String key) {
         XXHash32 xxHash32 = new XXHash32();
         xxHash32.update(key.getBytes());
-        // 保证返回值为正数
-        return (int) (xxHash32.getValue() & 0x7fffffff);
+        return xxHash32.getValue();
     }
 
     @Override
-    public int hash(String seed, String key) {
-        XXHash32 xxHash32 = new XXHash32();
-        xxHash32.update(seed.getBytes());
-        xxHash32.update(key.getBytes());
-        return (int) (xxHash32.getValue() & 0x7fffffff);
+    public int bits() {
+        return 32;
     }
 }
