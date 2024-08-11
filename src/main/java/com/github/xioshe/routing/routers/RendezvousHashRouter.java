@@ -8,9 +8,8 @@ import com.github.xioshe.routing.node.Node;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 /**
@@ -23,7 +22,7 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
     /**
      * 记录 Node 的有序集合，使用 ConcurrentSkipListSet 保证线程安全
      */
-    private final ConcurrentSkipListSet<T> nodeList = new ConcurrentSkipListSet<>(new NodeComparator());
+    private final CopyOnWriteArrayList<T> nodeList = new CopyOnWriteArrayList<>();
     private final HashFunction hashfunction;
 
     @SafeVarargs
@@ -39,9 +38,8 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
 
     @Override
     public List<T> addNode(T node) {
-        nodeList.add(node);
         // 添加新节点可能改变已经存储的 key 的节点序列，如果要确定影响范围，必须遍历所有节点
-        return new ArrayList<>(nodeList);
+        return nodeList.addIfAbsent(node) ? new ArrayList<>(nodeList) : Collections.emptyList();
     }
 
     @Override
@@ -66,21 +64,14 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
         }
 
         T result = null;
-        int hash = Integer.MIN_VALUE;
+        int maxHash = Integer.MIN_VALUE;
         for (T node : nodeList) {
-            int nodeHash = hashfunction.hash(key, node.key());
-            if (nodeHash > hash) {
-                hash = nodeHash;
+            int hash = hashfunction.hash(key, node.key());
+            if (hash > maxHash) {
+                maxHash = hash;
                 result = node;
             }
         }
         return result;
-    }
-
-    private static class NodeComparator implements Comparator<Node> {
-        @Override
-        public int compare(Node o1, Node o2) {
-            return o1.key().compareTo(o2.key());
-        }
     }
 }
