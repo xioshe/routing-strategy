@@ -10,9 +10,7 @@ import java.util.List;
  * @param <T> 节点类型
  */
 public interface ClusterAware<T extends Node> {
-
-    void setNodes(T[] nodes);
-
+    
     /**
      * 添加节点
      *

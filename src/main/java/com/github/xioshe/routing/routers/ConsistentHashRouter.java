@@ -38,53 +38,48 @@ public class ConsistentHashRouter<T extends Node> implements ClusterAwareRouter<
      */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock(true);
 
-    public ConsistentHashRouter(int virtualNodeCount) {
-        this(new MurmurHash3Function(), virtualNodeCount);
+    @SafeVarargs
+    public ConsistentHashRouter(int virtualNodeCount, T... nodes) {
+        this(new MurmurHash3Function(), virtualNodeCount, nodes);
     }
 
-    public ConsistentHashRouter(HashFunction hashfunction, int virtualNodeCount) {
+    @SafeVarargs
+    public ConsistentHashRouter(HashFunction hashfunction, int virtualNodeCount, T... nodes) {
         this.hashfunction = hashfunction;
         this.virtualNodeCount = virtualNodeCount;
-    }
-
-    @Override
-    public void setNodes(T[] nodes) {
-        lock.writeLock().lock();
-        try {
-            hashRing.clear();
-            virtualNodeCache.clear();
-            for (T node : nodes) {
-                addNode(node);
-            }
-        } finally {
-            lock.writeLock().unlock();
+        for (T node : nodes) {
+            doAddNode(node);
         }
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public List<T> addNode(T node) {
         lock.writeLock().lock();
         try {
-            boolean isFirstNode = hashRing.isEmpty();
-            Set<T> affectedNodes = new HashSet<>();
-            for (int i = 0; i < virtualNodeCount; i++) {
-                VirtualNode<T> virtualNode = new VirtualNode<>(node, node.key() + "#" + i);
-                int hash = hashfunction.hash((virtualNode.key()));
-                hashRing.put(hash, virtualNode);
-
-                virtualNodeCache.putIfAbsent(node, new ArrayList<>());
-                virtualNodeCache.get(node).add(virtualNode);
-
-                if (!isFirstNode) {
-                    // 收集被影响的真实节点
-                    affectedNodes.add((T) previousVirtualNode(hash).physicalNode());
-                }
-            }
-            return affectedNodes.stream().toList();
+            return doAddNode(node);
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<T> doAddNode(T node) {
+        boolean isFirstNode = hashRing.isEmpty();
+        Set<T> affectedNodes = new HashSet<>();
+        for (int i = 0; i < virtualNodeCount; i++) {
+            VirtualNode<T> virtualNode = new VirtualNode<>(node, node.key() + "#" + i);
+            int hash = hashfunction.hash((virtualNode.key()));
+            hashRing.put(hash, virtualNode);
+
+            virtualNodeCache.putIfAbsent(node, new ArrayList<>());
+            virtualNodeCache.get(node).add(virtualNode);
+
+            if (!isFirstNode) {
+                // 收集被影响的真实节点
+                affectedNodes.add((T) previousVirtualNode(hash).physicalNode());
+            }
+        }
+        return affectedNodes.stream().toList();
     }
 
     @Override

@@ -18,9 +18,8 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
 
     @Test
     void Add_return_affected_node() {
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3);
         var node = new IpNode("127.0.0.1");
-        router.setNodes(new IpNode[]{node});
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3, node);
         assertThat(router.size()).isEqualTo(1);
         assertThat(router.virtualNodeSize()).isEqualTo(3);
 
@@ -32,9 +31,8 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
 
     @Test
     void Add_return_affected_nodes() {
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3);
         var nodes = new IpNode[]{new IpNode("127.0.0.1"), new IpNode("127.0.0.2")};
-        router.setNodes(nodes);
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3, nodes);
         assertThat(router.size()).isEqualTo(2);
         assertThat(router.virtualNodeSize()).isEqualTo(6);
         var affected = router.addNode(new IpNode("127.0.0.3"));
@@ -51,9 +49,8 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
 
     @Test
     void Remove_a_not_existing_node_return_empty_list() {
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3);
         var node = new IpNode("127.0.0.1");
-        router.setNodes(new IpNode[]{node});
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3, node);
         assertThat(router.size()).isEqualTo(1);
         assertThat(router.virtualNodeSize()).isEqualTo(3);
         assertThat(router.removeNode(new IpNode("127.0.0.2"))).isEmpty();
@@ -61,19 +58,17 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
 
     @Test
     void Remove_return_removed_node() {
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3);
         var node = new IpNode("127.0.0.1");
-        router.setNodes(new IpNode[]{node, new IpNode("127.0.0.2")});
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3, node);
         var removed = router.removeNode(node);
         assertThat(removed).containsOnlyOnce(node);
     }
 
     @Test
     void Route_return_a_node() {
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3);
         var nodes = new IpNode[]{new IpNode("127.0.0.1"), new IpNode("127.0.0.2")};
-        router.setNodes(nodes);
-        assertThat(router.route("key")).isIn(nodes);
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(3, nodes);
+        assertThat(router.route("key")).isIn((Object[]) nodes);
     }
 
     @Test
@@ -89,8 +84,7 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
         for (int i = 0; i < nodes.length; i++) {
             nodes[i] = new IpNode("127.3.7." + i);
         }
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(100);
-        router.setNodes(nodes);
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(200, nodes);
 
         int[] counts = new int[nodes.length];
 
@@ -111,8 +105,7 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
         for (int i = 0; i < nodes.length; i++) {
             nodes[i] = new IpNode("127.3.7." + i);
         }
-        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(100);
-        router.setNodes(nodes);
+        ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(200, nodes);
 
         int[] counts = new int[nodes.length];
 

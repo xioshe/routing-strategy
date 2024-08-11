@@ -18,12 +18,9 @@ public class RoundRobinRouter<T extends Node> implements ClusterAwareRouter<T> {
     private final List<T> nodes = new ArrayList<>();
     private final AtomicLong counter = new AtomicLong();
 
-    @Override
-    public void setNodes(T[] nodes) {
-        this.nodes.clear();
-        for (T node : nodes) {
-            addNode(node);
-        }
+    @SafeVarargs
+    public RoundRobinRouter(T... nodes) {
+        Collections.addAll(this.nodes, nodes);
     }
 
     @Override

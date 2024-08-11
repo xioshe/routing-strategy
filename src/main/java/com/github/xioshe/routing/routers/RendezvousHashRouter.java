@@ -26,20 +26,15 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
     private final ConcurrentSkipListSet<T> nodeList = new ConcurrentSkipListSet<>(new NodeComparator());
     private final HashFunction hashfunction;
 
+    @SafeVarargs
     public RendezvousHashRouter(T... nodes) {
         this(new MurmurHash3Function(), nodes);
     }
 
+    @SafeVarargs
     public RendezvousHashRouter(HashFunction hashfunction, T... nodes) {
         this.hashfunction = hashfunction;
         nodeList.addAll(Arrays.asList(nodes));
-    }
-
-
-    @Override
-    public void setNodes(T[] nodes) {
-        // 不加锁无法保证原子性，使用构造函数传入初始节点
-        throw new UnsupportedOperationException();
     }
 
     @Override
