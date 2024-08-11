@@ -3,7 +3,7 @@ package com.github.xioshe.routing.routers;
 import com.github.xioshe.routing.ClusterAwareRouter;
 import com.github.xioshe.routing.hasing.HashFunction;
 import com.github.xioshe.routing.hasing.MurmurHash3Function;
-import com.github.xioshe.routing.node.Node;
+import com.github.xioshe.routing.node.WeightedNode;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,7 +17,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @param <T> 节点类型
  */
-public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<T> {
+public class RendezvousHashRouter<T extends WeightedNode> implements ClusterAwareRouter<T> {
 
     /**
      * 记录 Node 的有序集合，使用 ConcurrentSkipListSet 保证线程安全
@@ -64,14 +64,23 @@ public class RendezvousHashRouter<T extends Node> implements ClusterAwareRouter<
         }
 
         T result = null;
-        long maxHash = Long.MIN_VALUE;
+        double maxHash = 0;
         for (T node : nodeList) {
-            long hash = hashfunction.hash(key + node.key());
+            double hash = weightedScore(key, node);
             if (hash > maxHash) {
                 maxHash = hash;
                 result = node;
             }
         }
         return result;
+    }
+
+    /**
+     * 计算节点的加权分数。
+     * -1 / log( hash between (0,1] ) * weight
+     */
+    private double weightedScore(String key, T node) {
+        double score = hashfunction.unitInterval(key + node.key());
+        return -1.0 / Math.log(score) * node.getWeight();
     }
 }
