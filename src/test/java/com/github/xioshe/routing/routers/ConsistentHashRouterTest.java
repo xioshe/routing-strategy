@@ -119,4 +119,40 @@ class ConsistentHashRouterTest extends RoutingBaseTest {
             assertThat(count).isBetween(20000, 40000);
         }
     }
+
+    @Test
+    void Route_with_different_virtualNodeSize() {
+        var values = new int[]{1, 3, 10, 50, 100, 200, 1000, 10000};
+        for (int virtualNodeSize : values) {
+            IpNode[] nodes = new IpNode[3];
+            for (int i = 0; i < nodes.length; i++) {
+                nodes[i] = new IpNode("" + i);
+            }
+            ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(virtualNodeSize, nodes);
+            int[] counts = new int[nodes.length];
+            for (int i = 0; i < 100_000; i++) {
+                IpNode node = router.route(getNextSequence());
+                counts[node.key().charAt(0) - '0']++;
+            }
+            System.out.println(virtualNodeSize + ", " + new ArraySummaryStatistics(counts).summary());
+        }
+    }
+
+    @Test
+    void Route_with_different_key_size() {
+        var amounts = new int[]{10000, 10_0000, 100_0000, 500_0000};
+        for (int amount : amounts) {
+            IpNode[] nodes = new IpNode[3];
+            for (int i = 0; i < nodes.length; i++) {
+                nodes[i] = new IpNode("" + i);
+            }
+            ConsistentHashRouter<IpNode> router = new ConsistentHashRouter<>(1000, nodes);
+            int[] counts = new int[nodes.length];
+            for (int i = 0; i < amount; i++) {
+                IpNode node = router.route(getNextSequence());
+                counts[node.key().charAt(0) - '0']++;
+            }
+            System.out.println(amount + ", " + new ArraySummaryStatistics(counts).summary());
+        }
+    }
 }

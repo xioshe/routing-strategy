@@ -75,4 +75,22 @@ class RendezvousHashRouterTest extends RoutingBaseTest {
         assertThat((double) counts[1] / sum).isCloseTo(2.0 / 6, withinPercentage(1));
         assertThat((double) counts[2] / sum).isCloseTo(3.0 / 6, withinPercentage(1));
     }
+
+    @Test
+    void Route_with_different_key_size() {
+        var amounts = new int[]{10000, 10_0000, 100_0000, 500_0000};
+        for (int size : amounts) {
+            IpNode[] nodes = new IpNode[3];
+            for (int i = 0; i < nodes.length; i++) {
+                nodes[i] = new IpNode("" + i);
+            }
+            RendezvousHashRouter<IpNode> router = new RendezvousHashRouter<>(nodes);
+            int[] counts = new int[nodes.length];
+            for (int i = 0; i < size; i++) {
+                IpNode node = router.route(getNextSequence());
+                counts[node.key().charAt(0) - '0']++;
+            }
+            System.out.println(size + ", " + new ArraySummaryStatistics(counts).summary());
+        }
+    }
 }
